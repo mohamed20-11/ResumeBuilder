@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نموذج السيرة الذاتية</title>
+    <style>
+        label { display: block; margin-bottom: 5px; }
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .section { margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+<h2>إنشاء سيرة ذاتية</h2>
+
+<form id="resumeForm">
+    <label for="fullName">الاسم الكامل:</label>
+    <input type="text" id="fullName" required>
+
+    <label for="email">البريد الإلكتروني:</label>
+    <input type="email" id="email" required>
+
+    <label for="phoneNumber">رقم الهاتف:</label>
+    <input type="tel" id="phoneNumber" required>
+
+    <label for="address">العنوان:</label>
+    <input type="text" id="address" required>
+
+    <label for="summary">الملخص:</label>
+    <textarea id="summary" rows="4" required></textarea>
+
+    <div class="section">
+        <h3>التعليم</h3>
+        <div id="educations">
+            <div class="education">
+                <label for="institutionName">اسم المؤسسة:</label>
+                <input type="text" name="institutionName" required>
+                <label for="degree">الدرجة:</label>
+                <input type="text" name="degree" required>
+                <label for="startDate">تاريخ البدء:</label>
+                <input type="date" name="startDate" required>
+                <label for="endDate">تاريخ الانتهاء:</label>
+                <input type="date" name="endDate" required>
+            </div>
+        </div>
+        <button type="button" onclick="addEducation()">إضافة تعليم</button>
+    </div>
+
+    <div class="section">
+        <h3>المهارات</h3>
+        <div id="skills">
+            <input type="text" name="skillName" required>
+        </div>
+        <button type="button" onclick="addSkill()">إضافة مهارة</button>
+    </div>
+
+    <div class="section">
+        <h3>الخبرات</h3>
+        <div id="experiences">
+            <div class="experience">
+                <label for="companyName">اسم الشركة:</label>
+                <input type="text" name="companyName" required>
+                <label for="jobTitle">المسمى الوظيفي:</label>
+                <input type="text" name="jobTitle" required>
+                <label for="experienceStart">تاريخ البدء:</label>
+                <input type="date" name="experienceStart" required>
+                <label for="experienceEnd">تاريخ الانتهاء:</label>
+                <input type="date" name="experienceEnd" required>
+                <label for="description">الوصف:</label>
+                <textarea name="description" required></textarea>
+            </div>
+        </div>
+        <button type="button" onclick="addExperience()">إضافة خبرة</button>
+    </div>
+
+    <div class="section">
+        <label for="attachment">المرفق (مثل السيرة الذاتية):</label>
+        <input type="file" id="attachment" name="attachment" accept=".pdf,.doc,.docx , .jpg">
+    </div>
+
+    <button type="submit">إرسال</button>
+</form>
+
+<div id="message"></div>
+
+<script>
+    document.getElementById('resumeForm').addEventListener('submit', async function(event) {
+        event.preventDefault();
+
+        const formData = new FormData();
+        formData.append('FullName', document.getElementById('fullName').value);
+        formData.append('Email', document.getElementById('email').value);
+        formData.append('PhoneNumber', document.getElementById('phoneNumber').value);
+        formData.append('Address', document.getElementById('address').value);
+        formData.append('Summary', document.getElementById('summary').value);
+
+        // إضافة التعليم
+        const educationElements = document.querySelectorAll('.education');
+        educationElements.forEach(element => {
+            formData.append('Educations[0].InstitutionName', element.querySelector('[name="institutionName"]').value);
+            formData.append('Educations[0].Degree', element.querySelector('[name="degree"]').value);
+            formData.append('Educations[0].StartDate', element.querySelector('[name="startDate"]').value);
+            formData.append('Educations[0].EndDate', element.querySelector('[name="endDate"]').value);
+        });
+
+        // إضافة المهارات
+        const skillElements = document.querySelectorAll('[name="skillName"]');
+        skillElements.forEach((element, index) => {
+            formData.append(`Skills[${index}].SkillName`, element.value);
+        });
+
+        // إضافة الخبرات
+        const experienceElements = document.querySelectorAll('.experience');
+        experienceElements.forEach((element, index) => {
+            formData.append(`Experiences[${index}].CompanyName`, element.querySelector('[name="companyName"]').value);
+            formData.append(`Experiences[${index}].JobTitle`, element.querySelector('[name="jobTitle"]').value);
+            formData.append(`Experiences[${index}].StartDate`, element.querySelector('[name="experienceStart"]').value);
+            formData.append(`Experiences[${index}].EndDate`, element.querySelector('[name="experienceEnd"]').value);
+            formData.append(`Experiences[${index}].Description`, element.querySelector('[name="description"]').value);
+        });
+
+        // إضافة المرفق
+        const attachment = document.getElementById('attachment').files[0];
+        if (attachment) {
+            formData.append('Attachment.File', attachment);
+        }
+
+        const token = localStorage.getItem('token');
+        const headers = {};
+        if (token) {
+            headers['Authorization'] = 'Bearer ' + token;
+        }
+
+        try {
+            const response = await fetch('http://localhost:5024/api/Resume/PostNewResume', {
+                method: 'POST',
+                headers: headers,
+                body: formData
+            });
+
+            if (response.status === 401) {
+                localStorage.removeItem('token');
+                document.getElementById('message').textContent = 'انتهت الجلسة. يرجى تسجيل الدخول مرة أخرى.';
+                return;
+            }
+
+            const data = await response.json();
+            document.getElementById('message').textContent = 'تم إنشاء السيرة الذاتية بنجاح!';
+            document.getElementById('resumeForm').reset(); // مسح النموذج
+        } catch (error) {
+            console.error('خطأ في الطلب:', error);
+            document.getElementById('message').textContent = 'حدث خطأ. يرجى المحاولة مرة أخرى.';
+        }
+    });
+
+    function addEducation() {
+        const newEducation = document.createElement('div');
+        newEducation.className = 'education';
+        newEducation.innerHTML = `
+            <label for="institutionName">اسم المؤسسة:</label>
+            <input type="text" name="institutionName" required>
+            <label for="degree">الدرجة:</label>
+            <input type="text" name="degree" required>
+            <label for="startDate">تاريخ البدء:</label>
+            <input type="date" name="startDate" required>
+            <label for="endDate">تاريخ الانتهاء:</label>
+            <input type="date" name="endDate" required>
+        `;
+        document.getElementById('educations').appendChild(newEducation);
+    }
+
+    function addSkill() {
+        const newSkill = document.createElement('input');
+        newSkill.type = 'text';
+        newSkill.name = 'skillName';
+        newSkill.required = true;
+        document.getElementById('skills').appendChild(newSkill);
+    }
+
+    function addExperience() {
+        const newExperience = document.createElement('div');
+        newExperience.className = 'experience';
+        newExperience.innerHTML = `
+            <label for="companyName">اسم الشركة:</label>
+            <input type="text" name="companyName" required>
+            <label for="jobTitle">المسمى الوظيفي:</label>
+            <input type="text" name="jobTitle" required>
+            <label for="experienceStart">تاريخ البدء:</label>
+            <input type="date" name="experienceStart" required>
+            <label for="experienceEnd">تاريخ الانتهاء:</label>
+            <input type="date" name="experienceEnd" required>
+            <label for="description">الوصف:</label>
+            <textarea name="description" required></textarea>
+        `;
+        document.getElementById('experiences').appendChild(newExperience);
+    }
+</script>
+
+</body>
+</html>

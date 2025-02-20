@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>عرض السير الذاتية</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            direction: rtl;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: right;
+            cursor: pointer; /* تغيير المؤشر عند المرور على الصفوف */
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+
+<h1>عرض السير الذاتية</h1>
+<table>
+    <thead>
+        <tr>
+            <th>الاسم الكامل</th>
+            <th>البريد الإلكتروني</th>
+            <th>رقم الهاتف</th>
+            <th>العنوان</th>
+            <th>الملخص</th>
+            <th>التعليم</th>
+            <th>المهارات</th>
+            <th>الخبرات</th>
+        </tr>
+    </thead>
+    <tbody id="resumeTableBody">
+        <!-- سيتم إضافة البيانات هنا -->
+    </tbody>
+</table>
+
+<script>
+    const token = localStorage.getItem('token'); // استبدل هذا بالتوكن الخاص بك
+
+    fetch('http://localhost:5024/api/Resume/GetAllResumes', {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        const tableBody = document.getElementById('resumeTableBody');
+        data.result.forEach(resume => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${resume.fullName}</td>
+                <td>${resume.email}</td>
+                <td>${resume.phoneNumber}</td>
+                <td>${resume.address}</td>
+                <td>${resume.summary}</td>
+                <td>${resume.educations.length > 0 ? resume.educations.map(edu => edu.institutionName + ' (' + edu.degree + ')').join(', ') : 'لا يوجد'}</td>
+                <td>${resume.skills.length > 0 ? resume.skills.map(skill => skill.skillName).join(', ') : 'لا يوجد'}</td>
+                <td>${resume.experiences.length > 0 ? resume.experiences.map(exp => exp.companyName + ' - ' + exp.jobTitle).join(', ') : 'لا يوجد'}</td>
+            `;
+            row.onclick = () => {
+                window.location.href = `resume.html?resumeId=${resume.resumeId}&token=${token}`;
+            };
+            tableBody.appendChild(row);
+        });
+    })
+    .catch(error => {
+        console.error('حدث خطأ:', error);
+    });
+</script>
+
+</body>
+</html>

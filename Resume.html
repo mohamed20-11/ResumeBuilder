@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تفاصيل السيرة الذاتية</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            direction: rtl;
+        }
+        h1, h2, h3 {
+            text-align: center;
+        }
+        .resume-detail {
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin: 20px auto;
+            width: 80%;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .attachment {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .attachment img {
+            max-width: 150px;
+            height: 150px;
+            border: 1px solid #ddd;
+            margin-bottom: 10px;
+        }
+        .section {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>تفاصيل السيرة الذاتية</h1>
+<div id="resumeDetail" class="resume-detail">
+</div>
+
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const resumeId = urlParams.get('resumeId');
+    const token = urlParams.get('token');
+
+    fetch(`http://localhost:5024/api/Resume/GetResumeById/${resumeId}`, {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        const resume = data.result; // الوصول إلى بيانات السيرة الذاتية
+        const resumeDetail = document.getElementById('resumeDetail');
+        console.log(`http://localhost:5024/Uploads/${resume.attachment.fileName}`);
+        resumeDetail.innerHTML = `
+           <div class="attachment">
+    ${resume.attachment ? `<img src="http://localhost:5024/Uploads/${resume.attachment.fileName}" alt="مرفق السيرة الذاتية" />` : '<p>لا يوجد مرفقات</p>'}
+</div>
+
+            <h2>${resume.fullName}</h2>
+            <p><strong>البريد الإلكتروني:</strong> ${resume.email}</p>
+            <p><strong>رقم الهاتف:</strong> ${resume.phoneNumber}</p>
+            <p><strong>العنوان:</strong> ${resume.address}</p>
+            <p><strong>الملخص:</strong> ${resume.summary}</p>
+
+            <div class="section">
+                <h3>التعليم</h3>
+                <ul>
+                    ${resume.educations.length > 0 ? resume.educations.map(edu => `<li>${edu.institutionName} (${edu.degree}) من ${new Date(edu.startDate).toLocaleDateString()} إلى ${new Date(edu.endDate).toLocaleDateString()}</li>`).join('') : '<li>لا يوجد</li>'}
+                </ul>
+            </div>
+
+            <div class="section">
+                <h3>المهارات</h3>
+                <ul>
+                    ${resume.skills.length > 0 ? resume.skills.map(skill => `<li>${skill.skillName}</li>`).join('') : '<li>لا يوجد</li>'}
+                </ul>
+            </div>
+
+            <div class="section">
+                <h3>الخبرات</h3>
+                <ul>
+                    ${resume.experiences.length > 0 ? resume.experiences.map(exp => `<li>${exp.companyName} - ${exp.jobTitle} (من ${new Date(exp.startDate).toLocaleDateString()} إلى ${new Date(exp.endDate).toLocaleDateString()}): ${exp.description}</li>`).join('') : '<li>لا يوجد</li>'}
+                </ul>
+            </div>
+        `;
+    })
+    .catch(error => {
+        console.error('حدث خطأ:', error);
+    });
+</script>
+
+</body>
+</html>
