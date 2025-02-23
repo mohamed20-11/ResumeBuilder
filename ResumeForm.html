@@ -159,6 +159,7 @@
 
             const data = await response.json();
             document.getElementById('message').textContent = 'تم إنشاء السيرة الذاتية بنجاح!';
+            window.location.href='YourResume.html';
             document.getElementById('resumeForm').reset(); // مسح النموذج
         } catch (error) {
             console.error('خطأ في الطلب:', error);
